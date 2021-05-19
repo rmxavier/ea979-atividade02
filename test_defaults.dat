@@ -1,0 +1,9 @@
+EA979V4
+256 256
+# The default projection matrix is the identity, which corresponds to an ortogonal projection
+# The default transformation matrix is the identity, which corresponds to no transformation
+# The matrix stack starts empty
+# The default background is white (255, 255, 255,)
+# The default pen color is black (0, 0, 0,)
+SPH 80 16 16
+CUB 200 0

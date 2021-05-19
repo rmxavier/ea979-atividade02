@@ -1,0 +1,49 @@
+EA979V4
+640 480
+
+# Aplica a matriz de projeção: o sinal negativo é para que os eixos fiquem orientados corretamente (regra da mão direita), o eixo Z cresce saindo da tela
+V  1 0 0 0   0 1 0 0   0 0 1 0   0 0 -0.003 0
+
+# Posiciona a câmera - isso equivale a modificar o espaço inteiro
+# ... posiciona a câmera no eixo z: o "pinhole" fica na posição 0,0,0, e o "mundo" ocupa as posições negativas
+#     se restarem valores de Z positivos no modelo, os resultados serão contraintuitivos (e.g., desenhos invertidos)
+M  1 0 0 0   0 1 0 0   0 0 1 -300   0 0 0 1
+# ... rotaciona em torno do eixo x por 35°
+m  1 0 0 0   0 0.819 -0.574 0   0 0.574 0.819 0   0 0 0 1
+# ... rotaciona em torno do eixo y por 15°
+m  0.966 0 0.2891 0   0 1 0 0   -0.289 0 0.966 0   0 0 0 1
+
+# Limpa toda a imagem com a cor de fundo cinza médio
+c  128 128 128
+
+# Traça diversos quadrados com cores alternando entre vermelho, verde e azul
+C  255 0 0
+R 4   -100 -100 -100   -100 100 -100    100 100 -100    100 -100 -100
+C  0 255 0
+R 4   -100 -100  -60   -100 100  -60    100 100  -60    100 -100  -60
+C  0 0 255
+R 4   -100 -100  -20   -100 100  -20    100 100  -20    100 -100  -20
+C  255 0 0
+R 4   -100 -100   20   -100 100   20    100 100   20    100 -100   20
+C  0 255 0
+R 4   -100 -100   60   -100 100   60    100 100   60    100 -100   60
+C  0 0 255
+R 4   -100 -100  100   -100 100  100    100 100  100    100 -100  100
+
+# Traça uma esfera branca no interior do "cubo" formado pelos quadrados
+C  255 255 255
+SPH 80 16 16
+
+# Traça quadrados escuros em direção ao "ponto de fuga"
+C  64 64 64
+R 4   -100 -100 -140  -100 100 -140    100 100 -140   100 -100 -140
+R 4   -100 -100 -220  -100 100 -220    100 100 -220   100 -100 -220
+R 4   -100 -100 -380  -100 100 -380    100 100 -380   100 -100 -380
+R 4   -100 -100 -700  -100 100 -700    100 100 -700   100 -100 -700
+R 4   -100 -100 -1340  -100 100 -1340    100 100 -1340   100 -100 -1340
+R 4   -100 -100 -2620  -100 100 -2620    100 100 -2620   100 -100 -2620
+R 4   -100 -100 -5180  -100 100 -5180    100 100 -5180   100 -100 -5180
+R 4   -100 -100 -10300  -100 100 -10300    100 100 -10300   100 -100 -10300
+R 4   -100 -100 -20540  -100 100 -20540    100 100 -20540   100 -100 -20540
+R 4   -100 -100 -41020  -100 100 -41020    100 100 -41020   100 -100 -41020
+
