@@ -1,7 +1,7 @@
 # Renders a 2D model into a PPM image
 import sys
 import numpy as np
- 
+
 # ---------- Configuration types and constants ----------
 
 MAX_SIZE = 1024
