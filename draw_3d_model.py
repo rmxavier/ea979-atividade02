@@ -99,10 +99,10 @@ def transform(matrix,vector):
 # ---------- Drawing/model routines ----------
 def draw_line(image, V0, V1, color):
     #Transform the vectors in homogeneous coordinates to R3 int
-    x0 = round((V0[0]/V0[3]))
-    x1 = round((V1[0]/V1[3]))
-    y0 = round((V0[1]/V0[3]))
-    y1 = round((V1[1]/V1[3]))
+    x0 = round((V0[0]/V0[3])+width/2)
+    x1 = round((V1[0]/V1[3])+width/2)
+    y0 = round((V0[1]/V0[3])+height/2)
+    y1 = round((V1[1]/V1[3])+height/2)
     # Adicionar Zbuffer
     #z0 = round(V0[2])
     #z1 = round(V1[2])
