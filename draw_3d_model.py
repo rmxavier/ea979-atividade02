@@ -104,9 +104,8 @@ def draw_line(image, V0, V1, color):
     y0 = round((V0[1]/V0[3])+height/2)
     y1 = round((V1[1]/V1[3])+height/2)
     # Adicionar Zbuffer
-    #z0 = round(V0[2])
-    #z1 = round(V1[2])
-    #f= (V0[2]/V0[3])
+    z0 = round(V0[2])
+    z1 = round(V1[2])
     #assert x0 >=0 and x0 < width and x1 >=0 and x1 < width and y0 >=0 and y0 < height and y1 >=0 and y1 < height
     # Computes differences
     dx = x1-x0
@@ -131,7 +130,9 @@ def draw_line(image, V0, V1, color):
         step_row = 1 if r1>=r0 else -1
         d = 2*dr - dc # starting D value, D_init in book
         for pixel_c in range(c0, c1+1):
-            if pixel_c >=0 and pixel_c < width and pixel_r >=0 and pixel_r < height :
+            depth = z0 + (z1-z0)*(pixel_c-c0)/(c1-c0)
+            if pixel_c >=0 and pixel_c < width and pixel_r >=0 and pixel_r < height and depth>= zbuffer[pixel_r, pixel_c] :
+                zbuffer[pixel_r, pixel_c] = depth
                 image[pixel_r, pixel_c] = color
             if d<=0:
                 d += d_horizontal
@@ -156,7 +157,9 @@ def draw_line(image, V0, V1, color):
         step_col = 1 if c1>=c0 else -1
         d = 2*dc - dr # starting D value, D_init in book
         for pixel_r in range(r0, r1+1):
-            if pixel_c >=0 and pixel_c < width and pixel_r >=0 and pixel_r < height :
+            depth = z0 + (z1-z0)*(pixel_r-r0)/(r1-r0)
+            if pixel_c >=0 and pixel_c < width and pixel_r >=0 and pixel_r < height and depth>= zbuffer[pixel_r, pixel_c] :
+                zbuffer[pixel_r, pixel_c] = depth
                 image[pixel_r, pixel_c] = color
             if (d<=0):
                 d += d_vertical
