@@ -68,7 +68,7 @@ def save_ppm(image, output_file):
 def get_points(p_list):
     p=[]
     s = [float(s) for s in p_list]
-    # separates the input form of P comand, and R and P comand
+    # separates the input form of L comand, and R and P comand
     if len(p_list) % 3==0 :
         for i in range (0,2):
             p.append([s[3*i],s[3*i+1],s[3*i+2],1.0])
@@ -94,7 +94,42 @@ def transform(matrix,vector):
     p = matrix.dot(vector.transpose())
     return p.transpose()
 
+##
+# Calculates the sphere points
+##    
+def get_sph(R,N_m,N_p):
+    
+    delta_teta = 180/(N_m)   
+    delta_phi = 180/(N_p+1) 
+    phi = delta_phi
+    # Calculates the first circle , in xy plan
+    l_c=([[0,R,0,1],[0,-R,0,1]])   
+    for i in range(0,N_p):
+        x = R*np.sin(np.radians(phi))
+        y = R*np.cos(np.radians(phi))
+        l_c.insert(-(i+1),[x,y,0,1])
+        l_c.append([-x,-y,0,1])
+        phi+=delta_phi
+    # Apply a rotation matrix in axle y to get the other circle making the sphere   
+    l_sph=np.array([l_c]) 
+    a = np.cos(np.radians(delta_teta))
+    b = np.sin(np.radians(delta_teta))
+    M_r= np.array([[a,0,b,0],[0,1,0,0],[-b,0,a,0],[0,0,0,1]])
+    for i in range (1,N_m):
+        p = M_r.dot(l_sph[i-1].transpose())
+        l_sph=np.append(l_sph,[p.transpose()], axis = 0) 
+    return l_sph            # each position off this final array, is a matrix that carry the points of one circle
 
+##
+# Applies a transformation matrix for every circle that compound the sphere
+##   
+def transform_sph(matrix,array_sph):
+    p = matrix.dot(array_sph[0].transpose())
+    lt_sph = np.array([p.transpose()])
+    for i in range(1,len(array_sph)):
+        p = matrix.dot(array_sph[i].transpose())
+        lt_sph = np.append(lt_sph,[p.transpose()], axis = 0) 
+    return lt_sph
 
 # ---------- Drawing/model routines ----------
 def draw_line(image, V0, V1, color):
@@ -103,16 +138,16 @@ def draw_line(image, V0, V1, color):
     x1 = round((V1[0]/V1[3])+width/2)
     y0 = round((V0[1]/V0[3])+height/2)
     y1 = round((V1[1]/V1[3])+height/2)
-    # Adicionar Zbuffer
+    # Stores the z information
     z0 = round(V0[2])
     z1 = round(V1[2])
-    #assert x0 >=0 and x0 < width and x1 >=0 and x1 < width and y0 >=0 and y0 < height and y1 >=0 and y1 < height
-    # Computes differences
     dx = x1-x0
     dy = y1-y0
     dc = abs(dx) # delta x in book - here we are using row, col coordinates
     dr = abs(dy) # delta y in book
-    if dr <= dc:
+    if dr==0 and dc==0: #(evita casos errônios que tivemos com os polos da esfera que ao arrendondar as coordenadas ficam as mesmas)
+        return
+    elif dr <= dc:
         # Line inclination is at most 1
         # Swaps points if c1<c0 and converts x,y coordinates to row,col coordinates
         # dx>=0 => x1>=x0 => c1>=x0
@@ -131,6 +166,7 @@ def draw_line(image, V0, V1, color):
         d = 2*dr - dc # starting D value, D_init in book
         for pixel_c in range(c0, c1+1):
             depth = z0 + (z1-z0)*(pixel_c-c0)/(c1-c0)
+            # Check z-buffer conditions and if the pixel is inside the view port (solução para o clip longe do ideal, mas funciona)
             if pixel_c >=0 and pixel_c < width and pixel_r >=0 and pixel_r < height and depth>= zbuffer[pixel_r, pixel_c] :
                 zbuffer[pixel_r, pixel_c] = depth
                 image[pixel_r, pixel_c] = color
@@ -157,7 +193,9 @@ def draw_line(image, V0, V1, color):
         step_col = 1 if c1>=c0 else -1
         d = 2*dc - dr # starting D value, D_init in book
         for pixel_r in range(r0, r1+1):
-            depth = z0 + (z1-z0)*(pixel_r-r0)/(r1-r0)
+            # Calculates the depth
+            depth = z0 + (z1-z0)*(pixel_r-r0)/(r1-r0) 
+            # Check z-buffer conditions and if the pixel is inside the view port   
             if pixel_c >=0 and pixel_c < width and pixel_r >=0 and pixel_r < height and depth>= zbuffer[pixel_r, pixel_c] :
                 zbuffer[pixel_r, pixel_c] = depth
                 image[pixel_r, pixel_c] = color
@@ -177,9 +215,24 @@ def draw_geometry(image, points_array, color, type):
 
     if (type == GEOMETRY_REGION):
         draw_line(image, points_array[-1], points_array[0], color)
+
+def draw_SPH(image, points_array, color):
     
-
-
+    #desenha os meridianos
+    for j in range(0,len(points_array)):  
+        for i in range(0,len(points_array[j])-1): 
+             draw_line(image, points_array[j][i], points_array[j][i+1],color)
+        draw_line(image, points_array[j][-1], points_array[j][0],color)
+    
+    #desenha os paralelos
+    for i in range(1,len(points_array)+1):    
+        for j in range(0,(len(points_array)-1)):
+                draw_line(image, points_array[j][i], points_array[j+1][i],color)
+                draw_line(image, points_array[j][-i], points_array[j+1][-i],color)
+        draw_line(image, points_array[-1][i], points_array[0][-i],color)
+        draw_line(image, points_array[-1][-i], points_array[0][i],color)
+    
+ 
 # ---------- Main routine ----------
 
 # Parses and checks command-line arguments
@@ -191,7 +244,6 @@ if len(sys.argv)!=3:
 
 input_file_name  = sys.argv[1]
 output_file_name = sys.argv[2]
-matrix_stack = []
 
 # Reads input file and parses its header
 with open(input_file_name, 'rt', encoding='utf-8') as input_file:
@@ -219,7 +271,7 @@ color = DEFAULT_COLOR
 #
 transformation_matrix = np.eye(4)
 viewport_matrix = np.eye(4)
-
+matrix_stack = []
 # Main loop - interprets and renders drawing commands
 for line_n,line in enumerate(input_lines[2:], start=3):
 
@@ -335,21 +387,25 @@ for line_n,line in enumerate(input_lines[2:], start=3):
         # New transformation matrix is the current multiplied by the inputted one
         input_matrix = get_matrix(parameters)
         transformation_matrix = np.matmul(transformation_matrix,input_matrix)
-      
+
+    elif command == "SPH" :
+        check_parameters(3)
+        
+        points_SPH = get_sph(float(parameters[0]),int(parameters[1]),int(parameters[2]))
+        
+        # Applies the matrix operator to the coordinates
+        points_SPHt = transform_sph(transformation_matrix,points_SPH)
+            
+        # Applies the perspective matriz to the coordenates
+        points_SPHp = transform_sph(viewport_matrix,points_SPHt)
+        
+        draw_SPH(image, points_SPHp, color)
+        
     elif command == "PUSH":
         matrix_stack.append(transformation_matrix)
-        print("Comando push")
 
     elif command == "POP":
-        print("comando POP")
-        transformation_matrix = matrix_stack.pop()
-
-    elif command == "SPH":
-        print("comando SPH")
-
-    elif command == "CUB":
-        print("comando CUB")
-
+        transformation_matrix = matrix_stack.pop()    
         
     #
     # TODO: Implemente os demais comandos
