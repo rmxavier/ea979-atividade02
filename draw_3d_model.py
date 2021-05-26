@@ -88,6 +88,10 @@ def get_matrix(m_list):
     return np.array(m)
 
 ##
+# Transform the input from a list of strings to a matrix o squares (cube faces)
+##
+
+##
 # Applies a transformation matrix to a list of vectors
 ##   
 def transform(matrix,vector):
@@ -177,7 +181,44 @@ def draw_geometry(image, points_array, color, type):
 
     if (type == GEOMETRY_REGION):
         draw_line(image, points_array[-1], points_array[0], color)
+
+def get_pointsXXX(p_list):
+    p=[]
+    s = [float(s) for s in p_list]
+    # separates the input form of P comand, and R and P comand
+    if len(p_list) % 3==0 :
+        for i in range (0,2):
+            p.append([s[3*i],s[3*i+1],s[3*i+2],1.0])
+    else:
+        for i in range (0,int(p_list[0])):
+            p.append([s[3*i+1],s[3*i+2],s[3*i+3],1.0])
+    return np.array(p)
+
+def get_cube(parameters):
+
+    l = float(parameters[0]) / 2
+    crossed_face = parameters[1] == '1'
+
+    faces = np.array([[[-l,-l,-l,1.0],[l,-l,-l,1.0],[l,l,-l,1.0],[-l,l,-l,1.0]],
+                    [[-l,-l,l,1.0],[l,-l,l,1.0],[l,l,l,1.0],[-l,l,l,1.0]],
+                    [[-l,-l,-l,1.0],[-l,l,-l,1.0],[-l,l,l,1.0],[-l,-l,l,1.0]],
+                    [[l,-l,-l,1.0],[l,l,-l,1.0],[l,l,l,1.0],[l,-l,l,1.0]],
+                    [[-l,-l,-l,1.0],[-l,-l,l,1.0],[l,-l,l,1.0],[l,-l,-l,1.0]],
+                    [[-l,l,-l,1.0],[-l,l,l,1.0],[l,l,l,1.0],[l,l,-l,1.0]]])
+
+    if (crossed_face):
+        for i in range (0, 6, 1):
+            # Reordering the point list (p[1] and p[2])
+            aux = np.copy(faces[i][1])
+            faces[i][1] = np.copy(faces[i][2])
+            faces[i][2] = np.copy(aux)
     
+    return np.array(faces)
+
+    
+def draw_cube(image, faces, color):
+    for i in range(0, len(faces), 1):
+        draw_geometry(image, faces[i], color, GEOMETRY_REGION)
 
 
 # ---------- Main routine ----------
@@ -348,7 +389,13 @@ for line_n,line in enumerate(input_lines[2:], start=3):
         print("comando SPH")
 
     elif command == "CUB":
-        print("comando CUB")
+        faces = get_cube(parameters)
+
+        for i in range(0, len(faces), 1):
+            faces[i] = transform(viewport_matrix,transform(transformation_matrix,faces[i]))
+            
+        draw_cube(image, faces, color)
+
 
         
     #
