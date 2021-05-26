@@ -22,13 +22,18 @@ GEOMETRY_REGION = "REGION"
 GEOMETRY_POLYLINE = "POLYLINE"
 
 # Commands
-SET_BACKGROUND_COLOR = 'c'
-SET_COLOR = 'C'
-INPUT_GEOMETRY_LINE = 'L'
-INPUT_GEOMETRY_POLYLINE = 'P'
-INPUT_GEOMETRY_REGION = 'R'
-SET_TRANSFORMATION_MATRIX = 'M'
-APPLY_TRANSFORMATION_MATRIX = 'm'
+SET_BACKGROUND_COLOR = "c"
+SET_COLOR = "C"
+DRAW_GEOMETRY_LINE = "L"
+DRAW_GEOMETRY_POLYLINE = "P"
+DRAW_GEOMETRY_REGION = "R"
+DRAW_GEOMETRY_SPHERE = "SPH"
+DRAW_GEOMETRY_CUBE = "CUB"
+SET_TRANSFORMATION_MATRIX = "M"
+SET_VIEWPORT_MATRIX = "V"
+APPLY_TRANSFORMATION_MATRIX = "m"
+PUSH_TRANSFORMATION_MATRIX = "PUSH"
+POP_TRANSFORMATION_MATRIX = "POP"
 
 
 # ---------- Output routines ----------
@@ -87,9 +92,6 @@ def get_matrix(m_list):
         m.append([s[4*i],s[4*i+1],s[4*i+2],s[4*i+3]])
     return np.array(m)
 
-##
-# Transform the input from a list of strings to a matrix o squares (cube faces)
-##
 
 ##
 # Applies a transformation matrix to a list of vectors
@@ -220,11 +222,21 @@ def draw_geometry(image, points_array, color, type):
     if (type == GEOMETRY_REGION):
         draw_line(image, points_array[-1], points_array[0], color)
 
+##
+# Returns a cube centralized in (0,0,0). The cube is denoted 
+# by an array with 6 faces, each is an array of points
+#   parameters[0] - stands for the size of the sides of the cube
+#   parameters[1] - stands for whether the faces of the cube will be stylished with a X or not
+##
 def get_cube(parameters):
 
     l = float(parameters[0]) / 2
-    crossed_face = parameters[1] == '1'
+    is_fancy_cube = parameters[1] == '1'
 
+    # Array for a simple cube (with no X). Explaining this array:
+    # - General structure: [ face[0], face[1], face[2], face[3], face[4], face[05] ]
+    # - face[i] structure: [ point[0], point[1], point[2], point[3] ]
+    # - point[i] structure: [ x, y, z, 1.0 ]
     faces = np.array([[[-l,-l,-l,1.0],[l,-l,-l,1.0],[l,l,-l,1.0],[-l,l,-l,1.0]],
                     [[-l,-l,l,1.0],[l,-l,l,1.0],[l,l,l,1.0],[-l,l,l,1.0]],
                     [[-l,-l,-l,1.0],[-l,l,-l,1.0],[-l,l,l,1.0],[-l,-l,l,1.0]],
@@ -232,7 +244,8 @@ def get_cube(parameters):
                     [[-l,-l,-l,1.0],[-l,-l,l,1.0],[l,-l,l,1.0],[l,-l,-l,1.0]],
                     [[-l,l,-l,1.0],[-l,l,l,1.0],[l,l,l,1.0],[l,l,-l,1.0]]])
 
-    if (crossed_face):
+    # For stylish cubes (with an X on each face)
+    if is_fancy_cube:
         for i in range (0, 6, 1):
             # Reordering the point list (p[1] and p[2])
             aux = np.copy(faces[i][1])
@@ -241,10 +254,18 @@ def get_cube(parameters):
     
     return np.array(faces)
 
+##
+# Given an array of faces and a color
+# draws a cube by using draw_geometry set to GEOMETRY_REGION
+##
 def draw_cube(image, faces, color):
     for i in range(0, len(faces), 1):
         draw_geometry(image, faces[i], color, GEOMETRY_REGION)
 
+##
+# Given an array of points and a color
+# draws a sphere using draw_line
+##
 def draw_SPH(image, points_array, color):
     
     #desenha os meridianos
@@ -325,21 +346,21 @@ for line_n,line in enumerate(input_lines[2:], start=3):
             sys.exit(1)
 
 
-    if command == 'c':
+    if command == SET_BACKGROUND_COLOR:
         # Clears with new background color
         check_parameters(CHANNELS_N)
         background_color = np.array(parameters, dtype=IMAGE_DTYPE)
         image[...] = background_color
         zbuffer[...] = ZBUFFER_BACKGROUND
         
-    elif command == "C":
+    elif command == SET_COLOR:
         ##
         # Changes the color used to draw lines
         ##
         check_parameters(CHANNELS_N)
         color = np.array(parameters, dtype=IMAGE_DTYPE)
         
-    elif command == "L":
+    elif command == DRAW_GEOMETRY_LINE:
         ##
         # Draws a line based on 2 input points
         ##
@@ -355,7 +376,7 @@ for line_n,line in enumerate(input_lines[2:], start=3):
         # Draws a line
         draw_line(image, points_hp[0], points_hp[1], color)
    
-    elif command == "P":
+    elif command == DRAW_GEOMETRY_POLYLINE:
         ##
         # Draws a polyline based on N input points
         ##
@@ -371,7 +392,7 @@ for line_n,line in enumerate(input_lines[2:], start=3):
         # Draws a polyline
         draw_geometry(image, points_hp, color, GEOMETRY_POLYLINE)
 
-    elif command == "R":
+    elif command == DRAW_GEOMETRY_REGION:
         ##
         # Draws a region based on N input points
         # A line will be drawn from the last point to the first one to enclose the region
@@ -389,7 +410,7 @@ for line_n,line in enumerate(input_lines[2:], start=3):
         draw_geometry(image, points_hp, color, GEOMETRY_REGION)
     
     
-    elif command == "M":
+    elif command == SET_TRANSFORMATION_MATRIX:
         ##
         # Replaces the current transformation matrix applied to all input geometries
         ##
@@ -398,7 +419,7 @@ for line_n,line in enumerate(input_lines[2:], start=3):
         # Replacing the current transformation matrix with the input
         transformation_matrix = get_matrix(parameters)    
         
-    elif command == "V":
+    elif command == SET_VIEWPORT_MATRIX:
         ##
         # Replaces the current perspective matrix applied to all input geometries
         ##
@@ -407,7 +428,7 @@ for line_n,line in enumerate(input_lines[2:], start=3):
         # Replacing the current perspective matrix with the input
         viewport_matrix = get_matrix(parameters)    
         
-    elif command == "m":
+    elif command == APPLY_TRANSFORMATION_MATRIX:
         ##
         # Applies a new transformation matrix to the current transformation matrix
         ##
@@ -417,7 +438,11 @@ for line_n,line in enumerate(input_lines[2:], start=3):
         input_matrix = get_matrix(parameters)
         transformation_matrix = np.matmul(transformation_matrix,input_matrix)
 
-    elif command == "SPH" :
+    elif command == DRAW_GEOMETRY_SPHERE :
+        ##
+        # Draws a sphere according to inputted radius, and number of meridians and parallels
+        ##
+
         check_parameters(3)
         
         points_SPH = get_sph(float(parameters[0]),int(parameters[1]),int(parameters[2]))
@@ -425,29 +450,39 @@ for line_n,line in enumerate(input_lines[2:], start=3):
         # Applies the matrix operator to the coordinates
         points_SPHt = transform_sph(transformation_matrix,points_SPH)
             
-        # Applies the perspective matriz to the coordenates
+        # Applies the perspective matrix to the coordenates
         points_SPHp = transform_sph(viewport_matrix,points_SPHt)
         
         draw_SPH(image, points_SPHp, color)
-        
-    elif command == "PUSH":
-        matrix_stack.append(transformation_matrix)
 
-    elif command == "POP":
-        transformation_matrix = matrix_stack.pop()
+    elif command == DRAW_GEOMETRY_CUBE:
+        ##
+        # Draws a cube according to inputted size and style (1 for crossed faces)
+        ##
 
-    elif command == "CUB":
+        check_parameters(2)
+
+        # Gets the 6 faces to be drawn
         faces = get_cube(parameters)
 
+        # Applies transformations in every face
         for i in range(0, len(faces), 1):
             faces[i] = transform(viewport_matrix,transform(transformation_matrix,faces[i]))
             
+        # Draws the cube
         draw_cube(image, faces, color)
-
         
-    #
-    # TODO: Implemente os demais comandos
-    #
+    elif command == PUSH_TRANSFORMATION_MATRIX:
+        ##
+        # Pushes current transoformation matrix to a stack
+        ##
+        matrix_stack.append(transformation_matrix)
+
+    elif command == POP_TRANSFORMATION_MATRIX:
+        ##
+        # Replaces the current transformation matrix to a new one popped from a stack
+        ##
+        transformation_matrix = matrix_stack.pop()
 
     else:
         print(f'line {line_n}: unrecognized command "{command}"!', file=sys.stderr)
