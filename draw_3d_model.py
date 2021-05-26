@@ -177,9 +177,9 @@ def draw_geometry(image, points_array, color, type):
 
     if (type == GEOMETRY_REGION):
         draw_line(image, points_array[-1], points_array[0], color)
+    
 
 
- 
 # ---------- Main routine ----------
 
 # Parses and checks command-line arguments
@@ -191,6 +191,7 @@ if len(sys.argv)!=3:
 
 input_file_name  = sys.argv[1]
 output_file_name = sys.argv[2]
+matrix_stack = []
 
 # Reads input file and parses its header
 with open(input_file_name, 'rt', encoding='utf-8') as input_file:
@@ -334,6 +335,20 @@ for line_n,line in enumerate(input_lines[2:], start=3):
         # New transformation matrix is the current multiplied by the inputted one
         input_matrix = get_matrix(parameters)
         transformation_matrix = np.matmul(transformation_matrix,input_matrix)
+      
+    elif command == "PUSH":
+        matrix_stack.append(transformation_matrix)
+        print("Comando push")
+
+    elif command == "POP":
+        print("comando POP")
+        transformation_matrix = matrix_stack.pop()
+
+    elif command == "SPH":
+        print("comando SPH")
+
+    elif command == "CUB":
+        print("comando CUB")
 
         
     #
